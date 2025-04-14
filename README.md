@@ -14,3 +14,6 @@ The script extracts shlokas and their corresponding English translations for **a
 4.  Kishkindha Kanda
 5.  Sundara Kanda
 6.  Yuddha Kanda
+
+## Dataset 
+[Ramayana Shloka Dataset](https://www.kaggle.com/datasets/parthpatil256/ramayana-shloka-dataset)
