@@ -1,2 +1,8 @@
 requests
 beautifulsoup4
+pandas
+nltk
+numpy
+sentence_transformers
+torch
+transformers
