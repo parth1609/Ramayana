@@ -6,3 +6,14 @@ numpy
 sentence_transformers
 torch
 transformers
+huggingface_hub[hf_xet]
+langchain_huggingface
+sentencepiece
+matplotlib 
+plotly 
+nbformat 
+scikit-learn 
+spacy  
+accelerate 
+bitsandbytes  
+ipython

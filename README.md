@@ -67,6 +67,10 @@ pip install uv
 uv pip install pandas numpy matplotlib plotly nbformat nltk transformers scikit-learn spacy sentence-transformers accelerate bitsandbytes langchain-huggingface ipython
 
 # Install PyTorch with CUDA 11.8 support
+```bash
+https://pytorch.org/get-started/locally/
+```
+```bash
 uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
