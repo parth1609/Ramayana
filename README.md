@@ -89,4 +89,35 @@ nltk.download('punkt_tab', quiet=True)
 
 
 
+## 2. Streamlit App (Frontend) and Modular Backend
+
+- The frontend Streamlit app lives in `app.py`.
+- The backend is modularized under the `ramayana/` package:
+  - `ramayana/constants.py` — defaults and labels
+  - `ramayana/data.py` — dataset loading and cleaning
+  - `ramayana/embeddings.py` — sentence embeddings and PCA
+  - `ramayana/retrieval.py` — similarity search to fetch contexts
+  - `ramayana/prompts.py` — prompt templates and rendering
+  - `ramayana/llm.py` — LLM device/quantization and pipeline loading
+  - `ramayana/verification.py` — label parsing, single and batch verification
+  - `ramayana/types.py` — typed containers for results
+
+ 
+### Run the App
+
+1. Activate your virtual environment.
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Start Streamlit:
+   ```bash
+   streamlit run app.py
+   ```
+ 
+### GPU/Quantization Notes
+
+- If CUDA is available, the app can load `google/flan-t5-large` with 8-bit quantization (`bitsandbytes`) to reduce VRAM. Otherwise it falls back to CPU loading.
+- Embeddings (`all-MiniLM-L6-v2`) are computed on CPU and cached to `verse_embeddings.npy`.
+
 
