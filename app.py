@@ -2,9 +2,8 @@
 
 Screens:
 - Single Verification: enter a statement, retrieve context, and predict TRUE/FALSE/NONE.
-- Batch Evaluation: run verification over a CSV (default: initial.csv) and download results.
 
-This UI uses the backend in `ramayana_backend.py` and caches heavy resources.
+This UI uses the modular backend in the `ramayana` package and caches heavy resources.
 """
 from __future__ import annotations
 
@@ -86,32 +85,43 @@ def get_verifier_pipeline_cached(model_name: str, use_8bit: bool, max_new_tokens
 with st.sidebar:
     st.header("Settings")
 
-    # Data & Embeddings
-    default_dataset_abs = os.path.join(SCRIPT_DIR, rb.DEFAULT_DATASET_PATH)
-    dataset_default_value = default_dataset_abs if os.path.exists(default_dataset_abs) else rb.DEFAULT_DATASET_PATH
-    dataset_path = st.text_input(
-        "Dataset CSV",
-        value=dataset_default_value,
-        help="Path to the verses dataset with column 'English_translation'",
-    )
-    default_emb_abs = os.path.join(SCRIPT_DIR, rb.DEFAULT_EMBEDDINGS_PATH)
-    emb_default_value = default_emb_abs if os.path.exists(default_emb_abs) else rb.DEFAULT_EMBEDDINGS_PATH
-    embeddings_path = st.text_input(
-        "Embeddings .npy",
-        value=emb_default_value,
-        help="Path to cache/load sentence embeddings for verses",
-    )
+    # Data (Upload only)
+    uploaded_dataset = st.file_uploader("Upload dataset CSV", type=["csv"]) 
+    selected_text_column = None
+    if uploaded_dataset is not None:
+        try:
+            _tmp_df = pd.read_csv(uploaded_dataset)
+        except Exception as e:
+            st.error(f"Failed to read uploaded dataset: {e}")
+            st.stop()
+        columns = list(_tmp_df.columns)
+        if not columns:
+            st.error("Uploaded CSV has no columns.")
+            st.stop()
+        default_col = "English_translation" if "English_translation" in columns else columns[0]
+        default_idx = columns.index(default_col) if default_col in columns else 0
+        selected_text_column = st.selectbox(
+            "Text column",
+            options=columns,
+            index=default_idx,
+            help="Choose the column containing the verse text.",
+        )
+        # Reset file pointer for later reads
+        try:
+            uploaded_dataset.seek(0)
+        except Exception:
+            pass
 
     # Models
     st_model_name = st.text_input(
         "Sentence-Transformer",
         value=rb.DEFAULT_ST_MODEL_NAME,
-        help="Encoder used for semantic search (CPU)",
+        help="Encoder used for semantic search (CPU). Default: all-MiniLM-L6-v2",
     )
     model_name = st.text_input(
         "Verifier LLM",
         value=rb.DEFAULT_MODEL_NAME,
-        help="Seq2Seq model for TRUE/FALSE/NONE (e.g., google/flan-t5-large)",
+        help="Seq2Seq model to output TRUE/FALSE/NONE. You can change this.",
     )
 
     # Retrieval & LLM
@@ -132,14 +142,18 @@ with st.sidebar:
 # Lazy-load resources
 # -------------------------
 
-# Validate dataset path
-if not os.path.exists(dataset_path):
-    st.error(f"Dataset not found: {dataset_path}")
+if uploaded_dataset is None or selected_text_column is None:
+    st.warning("Please upload a dataset CSV and choose the text column.")
     st.stop()
 
 with st.spinner("Loading dataset..."):
-    df_verses, verses = load_dataset_cached(dataset_path)
+    df_verses = pd.read_csv(uploaded_dataset)
+    if selected_text_column not in df_verses.columns:
+        st.error(f"Selected column '{selected_text_column}' not found in the uploaded CSV.")
+        st.stop()
+    verses = df_verses[selected_text_column].fillna("").astype(str).tolist()
 
+embeddings_path = os.path.join(SCRIPT_DIR, rb.DEFAULT_EMBEDDINGS_PATH)  # created behind the scenes
 with st.spinner("Preparing embeddings and PCA..."):
     verse_embs, pca, verse_embs_pca = load_embeddings_and_pca_cached(
         verses=verses,
@@ -162,7 +176,7 @@ st.title("📜 Ramayana Statement Verifier")
 st.write("Verify statements using retrieved Ramayana context and an LLM (TRUE/FALSE/NONE).")
 
 # Tabs
-single_tab, batch_tab, about_tab = st.tabs(["Single Verification", "Batch Evaluation", "About"])
+single_tab, about_tab = st.tabs(["Single Verification", "About"])
 
 # -------------------------
 # Single Verification Tab
@@ -179,22 +193,7 @@ with single_tab:
         prompt_template=rb.DEFAULT_PROMPT_TEMPLATE,
     )
 
-# -------------------------
-# Batch Evaluation Tab
-# -------------------------
-with batch_tab:
-    from ramayana.ui_batch import render_batch_tab
-    default_statements_abs = os.path.join(SCRIPT_DIR, rb.DEFAULT_STATEMENTS_PATH)
-    render_batch_tab(
-        verses=verses,
-        embedding_model=embedding_model,
-        pca=pca,
-        verse_embs_pca=verse_embs_pca,
-        verifier_pipe=verifier_pipe,
-        default_statements_path=default_statements_abs if os.path.exists(default_statements_abs) else rb.DEFAULT_STATEMENTS_PATH,
-        top_k_default=top_k,
-        prompt_template=rb.DEFAULT_PROMPT_TEMPLATE,
-    )
+ 
 
 # -------------------------
 # About Tab
