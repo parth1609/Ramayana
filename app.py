@@ -47,6 +47,7 @@ def load_embeddings_and_pca_cached(
     embeddings_path: str,
     st_model_name: str,
     pca_components: int,
+    dataset_hash: str,  # Add dataset hash to force cache invalidation
 ) -> Tuple[np.ndarray, rb.PCA, np.ndarray]:
     """Load or compute verse embeddings and fit PCA; return (embs, pca, embs_pca)."""
     # Embeddings are computed via SentenceTransformer inside the backend function.
@@ -153,13 +154,21 @@ with st.spinner("Loading dataset..."):
         st.stop()
     verses = df_verses[selected_text_column].fillna("").astype(str).tolist()
 
-embeddings_path = os.path.join(SCRIPT_DIR, rb.DEFAULT_EMBEDDINGS_PATH)  # created behind the scenes
+# Create a hash based on dataset content to invalidate cache when dataset changes
+import hashlib
+dataset_content = f"{len(verses)}_{selected_text_column}_{hash(tuple(verses[:100]))}"  # Hash first 100 verses
+dataset_hash = hashlib.md5(dataset_content.encode()).hexdigest()
+
+# Use dataset-specific embeddings path to avoid conflicts
+embeddings_path = os.path.join(SCRIPT_DIR, f"verse_embeddings_{dataset_hash}.npy")
+
 with st.spinner("Preparing embeddings and PCA..."):
     verse_embs, pca, verse_embs_pca = load_embeddings_and_pca_cached(
         verses=verses,
         embeddings_path=embeddings_path,
         st_model_name=st_model_name,
         pca_components=pca_components,
+        dataset_hash=dataset_hash,  # Pass hash to force cache refresh
     )
 
 # Always keep a CPU SentenceTransformer for statements
