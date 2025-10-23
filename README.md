@@ -91,33 +91,51 @@ nltk.download('punkt_tab', quiet=True)
 
 ## 2. Streamlit App (Frontend) and Modular Backend
 
-- The frontend Streamlit app lives in `app.py`.
-- The backend is modularized under the `ramayana/` package:
-  - `ramayana/constants.py` — defaults and labels
-  - `ramayana/data.py` — dataset loading and cleaning
-  - `ramayana/embeddings.py` — sentence embeddings and PCA
-  - `ramayana/retrieval.py` — similarity search to fetch contexts
-  - `ramayana/prompts.py` — prompt templates and rendering
-  - `ramayana/llm.py` — LLM device/quantization and pipeline loading
-  - `ramayana/verification.py` — label parsing, single and batch verification
-  - `ramayana/types.py` — typed containers for results
+### Features
+- **Upload Any CSV Dataset**: Upload your own CSV file with Ramayana verses or any text data
+- **Flexible Column Selection**: Choose any column from your CSV as the text source
+- **Dynamic Processing**: Embeddings and models adapt to your uploaded data
+- **Local AI Models**: No API keys required - everything runs locally
+- **Single Statement Verification**: Get TRUE/FALSE/NONE answers with retrieved context
 
- 
-### Run the App
+### App Structure
+The frontend Streamlit app lives in `app.py` with a modular backend under the `ramayana/` package:
+- `ramayana/constants.py` — defaults and labels
+- `ramayana/data.py` — dataset loading and cleaning
+- `ramayana/embeddings.py` — sentence embeddings and PCA
+- `ramayana/retrieval.py` — similarity search to fetch contexts
+- `ramayana/prompts.py` — prompt templates and rendering
+- `ramayana/llm.py` — LLM device/quantization and pipeline loading
+- `ramayana/verification.py` — label parsing and verification
+- `ramayana/types.py` — typed containers for results
 
-1. Activate your virtual environment.
-2. Install dependencies:
+### How to Use
+
+1. **Activate your virtual environment**
+2. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
-3. Start Streamlit:
+3. **Start the app:**
    ```bash
    streamlit run app.py
    ```
- 
-### GPU/Quantization Notes
+4. **Upload your CSV:** Use the file uploader in the sidebar to upload any CSV file
+5. **Select text column:** Choose which column contains your text data (e.g., "English_translation", "Verse", "Text", etc.)
+6. **Configure models:** Optionally change the Sentence-Transformer or LLM model
+7. **Verify statements:** Enter statements in the main area and get AI-powered verification
 
-- If CUDA is available, the app can load `google/flan-t5-large` with 8-bit quantization (`bitsandbytes`) to reduce VRAM. Otherwise it falls back to CPU loading.
-- Embeddings (`all-MiniLM-L6-v2`) are computed on CPU and cached to `verse_embeddings.npy`.
+### Dataset Requirements
+- **Format:** CSV file with at least one text column
+- **Content:** Any text data (Ramayana verses, religious texts, stories, etc.)
+- **Flexibility:** No fixed column names required - you choose the column
+- **Size:** Works with datasets of any size (larger datasets take more time for initial processing)
+
+### Technical Notes
+- **Embeddings:** Auto-generated and cached per dataset using content hash
+- **GPU Support:** Automatic CUDA detection with 8-bit quantization when available
+- **CPU Fallback:** Works entirely on CPU if no GPU available
+- **Caching:** Smart caching system - new uploads trigger complete reprocessing
+- **No API Keys:** All models run locally (Sentence-Transformers + Hugging Face models)
 
 
